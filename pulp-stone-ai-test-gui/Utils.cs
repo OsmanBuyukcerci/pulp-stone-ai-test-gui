@@ -221,5 +221,27 @@ namespace pulp_stone_ai_test_gui
                 statusLabel.Text = statusLabel.Text = string.Join(" | ", ErrorQueue);
             }
         }
+
+        public List<Settings> get_settings(CheckBox checkboxShowLogs, CheckBox checkboxSaveLogs, CheckBox checkboxShowResults)
+        { 
+            List<Settings> settings = new List<Settings>();
+
+            if (checkboxShowLogs.Checked)
+            {
+                settings.Add(Settings.ShowLogs);
+            }
+
+            if (checkboxSaveLogs.Checked)
+            {
+                settings.Add(Settings.SaveLogs);
+            }
+
+            if (checkboxShowResults.Checked)
+            {
+                settings.Add(Settings.ShowResults);
+            }
+
+            return settings;
+        }
     }
 }
