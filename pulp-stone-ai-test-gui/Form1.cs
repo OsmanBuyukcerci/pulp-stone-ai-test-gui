@@ -59,9 +59,29 @@ namespace pulp_stone_ai_test_gui
             utils.update_status(lbl_status, lbl_status_header, lbl_selected_model, lbl_selected_model_header, lbl_image_count, lbl_image_count_header, lstbox_images);
         }
 
-        private void btn_start_detect_Click(object sender, EventArgs e)
+        private async void btn_start_detect_Click(object sender, EventArgs e)
         {
-            
+            Utils utils = new Utils();
+
+            Log logForm = new Log();
+
+            List<Settings> settings = utils.get_settings(chkbox_option_log, chkbox_option_save_logs, chkbox_option_show_results);
+
+            if (settings.Contains(Settings.ShowLogs))
+            {
+                logForm.Show();
+            }
+
+            await utils.start_detect(
+                settings,
+                chkbox_option_log,
+                chkbox_option_save_logs,
+                chkbox_option_show_results,
+                lbl_selected_model,
+                lbl_status,
+                trkbar_confidence,
+                lstbox_images,
+                logForm);
         }
 
         private void lstbox_images_ItemCheck(object sender, ItemCheckEventArgs e)

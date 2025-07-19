@@ -9,3 +9,7 @@ env/
 **/logs
 
 **/results
+
+packages/
+*.nupkg
+*.snupkg

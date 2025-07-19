@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace pulp_stone_ai_test_gui
 {
@@ -84,7 +89,7 @@ namespace pulp_stone_ai_test_gui
         {
             using (var ofd = new OpenFileDialog())
             {
-                string modelsDirectory = Path.Combine(Application.StartupPath, "models");
+                string modelsDirectory = Path.Combine(Directory.GetParent(Application.StartupPath).Parent.FullName, "models");
 
                 ofd.Title = "Bir model seçin";
                 ofd.Filter = "Modeller|*.pt*";
@@ -222,7 +227,10 @@ namespace pulp_stone_ai_test_gui
             }
         }
 
-        public List<Settings> get_settings(CheckBox checkboxShowLogs, CheckBox checkboxSaveLogs, CheckBox checkboxShowResults)
+        public List<Settings> get_settings(
+            CheckBox checkboxShowLogs, 
+            CheckBox checkboxSaveLogs, 
+            CheckBox checkboxShowResults)
         { 
             List<Settings> settings = new List<Settings>();
 
@@ -242,6 +250,120 @@ namespace pulp_stone_ai_test_gui
             }
 
             return settings;
+        }
+
+        public List<string> get_image_paths(CheckedListBox checkedListBoxImages)
+        {
+            List<string> imagePaths = new List<string>();
+
+            foreach (string path in checkedListBoxImages.CheckedItems)
+            {
+                imagePaths.Add(path);
+            }
+
+            return imagePaths;
+        }
+
+        public async Task start_detect(
+            List<Settings> settings,
+            CheckBox checkboxShowLogs, 
+            CheckBox checkboxSaveLogs,
+            CheckBox checkboxShowResults,
+            Label modelLabel,
+            Label statusLabel,
+            TrackBar trackbarConfidence,
+            CheckedListBox checkedListBoxImages,
+            Log logForm)
+        {
+
+            string pythonExePath = Path.Combine(Directory.GetParent(Application.StartupPath).Parent.Parent.FullName, "env/Scripts/python.exe");
+
+            string scriptPath = Path.Combine(Directory.GetParent(Application.StartupPath).Parent.FullName, "pulp_stone_ai_test.py");
+
+            double confidence = trackbarConfidence.Value / 100.0;
+
+            var arguments = new
+            {
+                confidence = confidence,
+                images = get_image_paths(checkedListBoxImages),
+                model = modelLabel.Text,
+                settings = settings
+            };
+
+            var jsonArguments = JsonSerializer.Serialize(arguments);
+
+            var tempJsonPath = Path.GetTempFileName();
+
+            File.WriteAllText(tempJsonPath, jsonArguments);
+
+            string args = $"{scriptPath} \"{tempJsonPath}\"";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = pythonExePath,
+                Arguments = args,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            Process process = new Process();
+            
+            process.StartInfo = psi;
+
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    logForm.AppendLog(e.Data);
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    logForm.AppendLog(e.Data);
+                }
+            };
+
+            statusLabel.Text = "Nesne tanıma işlemi başladı lütfen bekleyiniz...";
+
+            process.Start();
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            await Task.Run(() =>
+            {
+                process.WaitForExit();
+            });
+
+            if (settings.Contains(Settings.SaveLogs))
+            {
+                string logFolderPath = Path.Combine(
+                    Directory.GetParent(Application.StartupPath).Parent.FullName, 
+                    "logs");
+                string logFilePath = Path.Combine(
+                    logFolderPath,
+                    $"log {DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
+
+                if (!Directory.Exists(logFolderPath))
+                {
+                    Directory.CreateDirectory(logFilePath);
+                }
+
+                logForm.SaveLogs(logFilePath);
+
+                statusLabel.Text = $"Nesne tanıma işlemi tamamlandı. Log dosyası kaydedildi: {logFilePath}";
+            } 
+            else
+            {
+                statusLabel.Text = "Nesne tanıma işlemi tamamlandı.";
+            }
+
+            uncheck_all_items(checkedListBoxImages);
         }
     }
 }
