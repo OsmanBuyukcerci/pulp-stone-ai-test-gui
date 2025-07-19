@@ -1,6 +1,6 @@
 ﻿namespace pulp_stone_ai_test_gui
 {
-    partial class Form1
+    partial class Main
     {
         /// <summary>
         ///Gerekli tasarımcı değişkeni.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.lstbox_images = new System.Windows.Forms.CheckedListBox();
             this.btn_scan_folder = new System.Windows.Forms.Button();
             this.btn_clear_listbox = new System.Windows.Forms.Button();
