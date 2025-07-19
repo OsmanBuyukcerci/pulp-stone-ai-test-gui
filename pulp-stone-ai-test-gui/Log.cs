@@ -16,6 +16,7 @@ namespace pulp_stone_ai_test_gui
         public Log()
         {
             InitializeComponent();
+            this.MaximizeBox = false;
             lstbox_log.HorizontalScrollbar = true;
         }
 

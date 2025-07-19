@@ -19,6 +19,7 @@ namespace pulp_stone_ai_test_gui
             InitializeComponent();
 
             this.Text = "Pulp Stone AI Test GUI";
+            this.MaximizeBox = false;
 
             lstbox_images.HorizontalScrollbar = true;
         }
