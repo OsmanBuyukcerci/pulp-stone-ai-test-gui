@@ -17,21 +17,18 @@ namespace pulp_stone_ai_test_gui
     {
         public void set_image_count(CheckedListBox checkedListBox, Label countLabel, Label countHeaderLabel, bool isIncrement)
         {
-            int newCount = checkedListBox.CheckedItems.Count;
-            if (isIncrement)
-            {
-                newCount++;
-            }
-            else
-            {
-                newCount--;
-            }
+            int newCount = checkedListBox.CheckedItems.Count + (isIncrement ? 1 : -1);
 
             set_count_label(countLabel, countHeaderLabel, newCount);
         }
 
         public void set_count_label(Label countLabel, Label countHeaderLabel, int count)
         {
+            if (count < 0)
+            {
+                count = 0;
+            }
+
             countLabel.Text = count.ToString();
             countHeaderLabel.ForeColor = count > 0 ? Color.Green : Color.Red;
         }
@@ -216,14 +213,24 @@ namespace pulp_stone_ai_test_gui
                 countHeaderLabel,
                 checkedListBox);
 
+            if (checkedListBox.CheckedItems.Count == 0)
+            {
+                set_count_label(countLabel, countHeaderLabel, 0);
+            }
+            else
+            {
+                set_count_label(countLabel, countHeaderLabel, checkedListBox.CheckedItems.Count);
+            }
+
             if (ErrorQueue.Count == 0)
             {
                 statusHeaderLabel.ForeColor = Color.Green;
                 statusLabel.Text = "Çalıştırılması bekleniyor";
-            } else
+            }
+            else
             {
                 statusHeaderLabel.ForeColor = Color.Red;
-                statusLabel.Text = statusLabel.Text = string.Join(" | ", ErrorQueue);
+                statusLabel.Text = string.Join(" | ", ErrorQueue);
             }
         }
 
