@@ -15,14 +15,64 @@ namespace pulp_stone_ai_test_gui
 {
     internal class Utils
     {
-        public void set_image_count(CheckedListBox checkedListBox, Label countLabel, Label countHeaderLabel, bool isIncrement)
-        {
-            int newCount = checkedListBox.CheckedItems.Count + (isIncrement ? 1 : -1);
+        public Label statusLabel;
+        public Label statusHeaderLabel;
+        public Label modelLabel;
+        public Label modelHeaderLabel;
+        public Label countLabel;
+        public Label countHeaderLabel;
 
-            set_count_label(countLabel, countHeaderLabel, newCount);
+        public CheckedListBox checkedListBoxImages;
+
+        public TrackBar trackbarConfidence;
+        public NumericUpDown nupConfidence;
+
+        public CheckBox checkboxShowLogs;
+        public CheckBox checkboxSaveLogs;
+        public CheckBox checkboxShowResults;
+
+        Log logForm;
+
+        private int _pendingCheckedCount = 0;
+
+        public Utils (Label statusLabel, Label statusHeaderLabel, 
+                      Label modelLabel, Label modelHeaderLabel, 
+                      Label countLabel, Label countHeaderLabel,
+                      CheckedListBox checkedListBoxImages,
+                      TrackBar trackbarConfidence,
+                      NumericUpDown nupConfidence,
+                      CheckBox checkboxShowLogs,
+                      CheckBox checkboxSaveLogs,
+                      CheckBox checkboxShowResults,
+                      Log logForm)
+        {
+            this.statusLabel = statusLabel;
+            this.statusHeaderLabel = statusHeaderLabel;
+            this.modelLabel = modelLabel;
+            this.modelHeaderLabel = modelHeaderLabel;
+            this.countLabel = countLabel;
+            this.countHeaderLabel = countHeaderLabel;
+            this.checkedListBoxImages = checkedListBoxImages;
+            this.trackbarConfidence = trackbarConfidence;
+            this.nupConfidence = nupConfidence;
+            this.checkboxShowLogs = checkboxShowLogs;
+            this.checkboxSaveLogs = checkboxSaveLogs;
+            this.checkboxShowResults = checkboxShowResults;
+            this.logForm = logForm;
         }
 
-        public void set_count_label(Label countLabel, Label countHeaderLabel, int count)
+        public void set_image_count(bool isIncrement)
+        {
+            int newCount = checkedListBoxImages.CheckedItems.Count + (isIncrement ? 1 : -1);
+
+            set_count_label(newCount);
+
+            _pendingCheckedCount += isIncrement ? 1 : -1;
+
+            update_status();
+        }
+
+        public void set_count_label(int count)
         {
             if (count < 0)
             {
@@ -33,13 +83,13 @@ namespace pulp_stone_ai_test_gui
             countHeaderLabel.ForeColor = count > 0 ? Color.Green : Color.Red;
         }
 
-        public void set_status(Label statusLabel, Label statusHeaderLabel, string message, Color color)
+        public void set_status(string message, Color color)
         {
             statusLabel.Text = message;
             statusHeaderLabel.ForeColor = color;
         }
 
-        public void scan_folder_and_add_images_to_listbox(CheckedListBox checkedListBox)
+        public void scan_folder_and_add_images_to_listbox()
         {
             using (var fbd = new FolderBrowserDialog())
             {
@@ -54,35 +104,35 @@ namespace pulp_stone_ai_test_gui
 
                     foreach (string image in images)
                     {
-                        checkedListBox.Items.Add(image, true);
+                        checkedListBoxImages.Items.Add(image, true);
                     }
                 }
             }
         }
 
-        public void clear_listbox(CheckedListBox checkedListBox, Label countLabel, Label countHeaderLabel)
+        public void clear_listbox()
         {
-            checkedListBox.Items.Clear();
-            set_count_label(countLabel, countHeaderLabel, 0);
+            checkedListBoxImages.Items.Clear();
+            set_count_label(0);
         }
 
-        public void uncheck_all_items(CheckedListBox checkedListBox)
+        public void uncheck_all_items()
         {
-            for (int i = 0; i < checkedListBox.Items.Count; i++)
+            for (int i = 0; i < checkedListBoxImages.Items.Count; i++)
             {
-                checkedListBox.SetItemChecked(i, false);
+                checkedListBoxImages.SetItemChecked(i, false);
             }
         }
 
-        public void check_all_items(CheckedListBox checkedListBox)
+        public void check_all_items()
         {
-            for (int i = 0; i < checkedListBox.Items.Count; i++)
+            for (int i = 0; i < checkedListBoxImages.Items.Count; i++)
             {
-                checkedListBox.SetItemChecked(i, true);
+                checkedListBoxImages.SetItemChecked(i, true);
             }
         }
 
-        public void select_model(Label selectedModelLabel, Label selectedModelLabelHeader)
+        public void select_model()
         {
             using (var ofd = new OpenFileDialog())
             {
@@ -96,16 +146,14 @@ namespace pulp_stone_ai_test_gui
                 {
                     string selectedModelPath = ofd.FileName;
                     string selectedModelName = selectedModelPath.Split('\\').Last();
-
                     
-
-                    selectedModelLabel.Text = selectedModelName;
-                    selectedModelLabelHeader.ForeColor = Color.Green;
+                    modelLabel.Text = selectedModelName;
+                    modelHeaderLabel.ForeColor = Color.Green;
                 }
             }
         }
 
-        public void trackbar_scroll(TrackBar trackbarConfidence, NumericUpDown nupConfidence)
+        public void trackbar_scroll()
         {
             if (trackbarConfidence.Value == 0)
             {
@@ -118,7 +166,7 @@ namespace pulp_stone_ai_test_gui
             nupConfidence.Text = newConfidence.ToString();
         }
 
-        public void numeric_up_down_value_changed(NumericUpDown nupConfidence, TrackBar trackbarConfidence)
+        public void numeric_up_down_value_changed()
         {
             if (nupConfidence.Value == 0)
             {
@@ -139,14 +187,7 @@ namespace pulp_stone_ai_test_gui
             return models;
         }
 
-        public Queue<string> check_status(
-            Label statusLabel, 
-            Label statusHeaderLabel, 
-            Label modelLabel, 
-            Label modelHeaderLabel,
-            Label countLabel,
-            Label countHeaderLabel,
-            CheckedListBox checkedListBox)
+        public Queue<string> check_status()
         {
             Queue<string> errorMessageQueue = new Queue<string>();
             Errors errors = new Errors();
@@ -182,45 +223,19 @@ namespace pulp_stone_ai_test_gui
             }
 
             // Check is at least one image selected
-            int checkedItemsCounter = checkedListBox.CheckedItems.Count;
+            int checkedItemsCounter = checkedListBoxImages.CheckedItems.Count + _pendingCheckedCount;
 
             if (checkedItemsCounter == 0)
             {
                 errorMessageQueue.Enqueue(Errors.StatusErrors["image_count_zero"]);
-            } else
-            {
-                set_count_label(countLabel, countHeaderLabel, checkedItemsCounter);
-            }
+            } 
 
             return errorMessageQueue;
         }
 
-        public void update_status(
-            Label statusLabel,
-            Label statusHeaderLabel,
-            Label modelLabel,
-            Label modelHeaderLabel,
-            Label countLabel,
-            Label countHeaderLabel,
-            CheckedListBox checkedListBox)
+        public void update_status()
         {
-            Queue<string> ErrorQueue = check_status(
-                statusLabel,
-                statusHeaderLabel,
-                modelLabel,
-                modelHeaderLabel,
-                countLabel,
-                countHeaderLabel,
-                checkedListBox);
-
-            if (checkedListBox.CheckedItems.Count == 0)
-            {
-                set_count_label(countLabel, countHeaderLabel, 0);
-            }
-            else
-            {
-                set_count_label(countLabel, countHeaderLabel, checkedListBox.CheckedItems.Count);
-            }
+            Queue<string> ErrorQueue = check_status();
 
             if (ErrorQueue.Count == 0)
             {
@@ -234,10 +249,7 @@ namespace pulp_stone_ai_test_gui
             }
         }
 
-        public List<Settings> get_settings(
-            CheckBox checkboxShowLogs, 
-            CheckBox checkboxSaveLogs, 
-            CheckBox checkboxShowResults)
+        public List<Settings> get_settings()
         { 
             List<Settings> settings = new List<Settings>();
 
@@ -259,7 +271,7 @@ namespace pulp_stone_ai_test_gui
             return settings;
         }
 
-        public List<string> get_image_paths(CheckedListBox checkedListBoxImages)
+        public List<string> get_image_paths()
         {
             List<string> imagePaths = new List<string>();
 
@@ -271,17 +283,14 @@ namespace pulp_stone_ai_test_gui
             return imagePaths;
         }
 
-        public async Task start_detect(
-            List<Settings> settings,
-            CheckBox checkboxShowLogs, 
-            CheckBox checkboxSaveLogs,
-            CheckBox checkboxShowResults,
-            Label modelLabel,
-            Label statusLabel,
-            TrackBar trackbarConfidence,
-            CheckedListBox checkedListBoxImages,
-            Log logForm)
+        public async Task start_detect()
         {
+            List<Settings> settings = get_settings();
+
+            if (settings.Contains(Settings.ShowLogs))
+            {
+                logForm.Show();
+            }
 
             string pythonExePath = Path.Combine(Directory.GetParent(Application.StartupPath).Parent.Parent.FullName, "env/Scripts/python.exe");
 
@@ -292,7 +301,7 @@ namespace pulp_stone_ai_test_gui
             var arguments = new
             {
                 confidence = confidence,
-                images = get_image_paths(checkedListBoxImages),
+                images = get_image_paths(),
                 model = modelLabel.Text,
                 settings = settings
             };
@@ -369,8 +378,6 @@ namespace pulp_stone_ai_test_gui
             {
                 statusLabel.Text = "Nesne tanıma işlemi tamamlandı.";
             }
-
-            uncheck_all_items(checkedListBoxImages);
         }
     }
 }
