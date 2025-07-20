@@ -13,3 +13,7 @@ env/
 packages/
 *.nupkg
 *.snupkg
+
+pulp-stone-ai-test-gui/publish/
+pulp-stone-ai-test-gui/pulp-stone-ai-test-gui.csproj.user
+pulp-stone-ai-test-gui/pulp-stone-ai-test-gui_TemporaryKey.pfx
